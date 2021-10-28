@@ -1,0 +1,9 @@
+.github
+.vscode
+src
+tests
+tsconfig.json
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+.env*
