@@ -2,6 +2,7 @@ import { addHook } from 'pirates';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { cwd } from 'process';
+import type { UserConfig } from 'vite';
 import parseKeyValuePair from 'parse-key-value-pair';
 
 const CWD = cwd();
@@ -13,7 +14,7 @@ export function format(value: ImportMetaEnv[keyof ImportMetaEnv]) {
   return value ? `"${value}"` : `""`;
 }
 
-export function compile(code: string, env: ImportMetaEnv) {
+export function compile(code: string, env: Record<string, any>) {
   let res = code;
   for (const [key, value] of Object.entries(env)) {
     res = res.replace(new RegExp('import\.meta\.env\.' + key, 'g'), format(value));
@@ -40,18 +41,31 @@ export function parse(content: string) {
   return env;
 }
 
+type ResolvedConfig = UserConfig & {
+  mode?: string
+  base?: string
+  env: Record<string, any>
+}
+
 export function register() {
   const NODE_ENV = process.env.NODE_ENV ?? 'development';
-  const defaultPath = join(CWD, './.env');
-  const defaultLocalPath = join(CWD, './.env.local');
   const PROD = NODE_ENV === 'prod' || NODE_ENV === 'production';
-  let ENV_VARS: ImportMetaEnv = {
-    MODE: NODE_ENV,
-    DEV: !PROD,
-    PROD,
-    SSR: false,
-    BASE_URL: '/'
+  let config: ResolvedConfig = {
+    env: {
+      MODE: NODE_ENV,
+      DEV: !PROD,
+      PROD,
+      SSR: false,
+      BASE_URL: '/'
+    }
   };
+  function tryReadViteConfig(path: string) {
+    if (existsSync(path)) {
+      const resolvedConfig: ResolvedConfig = require(path).default;
+      config = { ...config, ...resolvedConfig };
+      if (resolvedConfig.base) config.env.BASE_URL = resolvedConfig.base;
+    }
+  }
   function tryReadFrom(filePath: string): Record<string, string> {
     const content = readFileSync(filePath, 'utf8');
     try {
@@ -63,16 +77,17 @@ export function register() {
   }
   function tryGatherFrom(path: string) {
     if (existsSync(path)) {
-      ENV_VARS = { ...ENV_VARS, ...tryReadFrom(path) };
+      config.env = { ...config.env, ...tryReadFrom(path) };
     }
   }
-  tryGatherFrom(defaultPath);
-  tryGatherFrom(defaultLocalPath);
+  tryReadViteConfig(join(CWD, './vite.config.js'));
+  tryReadViteConfig(join(CWD, './vite.config.ts'));
+  tryReadViteConfig(join(CWD, './vite.config.mjs'));
+  tryGatherFrom(join(CWD, './.env'));
+  tryGatherFrom(join(CWD, './.env.local'));
   if (NODE_ENV !== 'development') {
-    const specificModePath = join(CWD, `./.env.${NODE_ENV}`);
-    const specificModeLocalPath = join(CWD, `./.env.${NODE_ENV}`);
-    tryGatherFrom(specificModePath);
-    tryGatherFrom(specificModeLocalPath);
+    tryGatherFrom(join(CWD, `./.env.${NODE_ENV}`));
+    tryGatherFrom(join(CWD, `./.env.${NODE_ENV}`));
   }
-  addHook((code: string) => compile(code, ENV_VARS), { exts: DEFAULT_EXTENSIONS });
+  return addHook((code: string) => compile(code, config.env), { exts: DEFAULT_EXTENSIONS });
 }

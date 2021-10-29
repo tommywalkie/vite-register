@@ -37,8 +37,8 @@ Pretty much [like Vite does](https://vitejs.dev/guide/env-and-mode.html#producti
 - [x] Support `import.meta.env.MODE` (based on `process.env.NODE_ENV`, defaults to `development`)
 - [x] Support `import.meta.env.DEV`
 - [x] Support `import.meta.env.PROD`
-- [ ] Support `import.meta.env.SSR` (defaults to `false`)
-- [ ] Support `import.meta.env.BASE_URL` (defaults to `/`)
+- [ ] Support experimental `import.meta.env.SSR` (defaults to `false`)
+- [x] Support `import.meta.env.BASE_URL` (defaults to `/`)
 - [x] Support loading variables prefixed with `VITE_`
   - [x] from a `.env` file
   - [x] from a `.env.local` file
