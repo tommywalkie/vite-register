@@ -56,6 +56,14 @@ node -r vite-register index.js
 > hello world
 ```
 
+vite-register can look into Vite configuration files (`vite.config.[ext]`) and retrieve [`base`](https://vitejs.dev/config/#base).
+
+Add some hook like [tsm](https://github.com/lukeed/tsm) or [esbuild-runner](https://github.com/folke/esbuild-runner) before using vite-register, when needing to support TypeScript/ESM support in scripts and configuration files.
+
+```bash
+node -r esbuild-runner/register -r vite-register index.ts
+```
+
 ### Mocha
 
 ↪️ <a href="https://github.com/mochajs/mocha">mochajs/mocha</a>
