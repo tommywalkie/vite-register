@@ -1,2 +1,2 @@
-import { register } from './';
+import { register } from '.';
 register();
