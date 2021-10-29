@@ -4,15 +4,16 @@ import { join } from 'path';
 import { cwd } from 'process';
 import parseKeyValuePair from 'parse-key-value-pair';
 
+const CWD = cwd();
 const DEFAULT_EXTENSIONS = ['.js', '.jsx', '.ts', '.tsx', '.mjs'];
 
-function format(value: ImportMetaEnv[keyof ImportMetaEnv]) {
+export function format(value: ImportMetaEnv[keyof ImportMetaEnv]) {
   if (value === true) return 'true';
   if (value === false) return 'false';
   return value ? `"${value}"` : `""`;
 }
 
-function compile(code: string, env: ImportMetaEnv) {
+export function compile(code: string, env: ImportMetaEnv) {
   let res = code;
   for (const [key, value] of Object.entries(env)) {
     res = res.replace(new RegExp('import\.meta\.env\.' + key, 'g'), format(value));
@@ -20,23 +21,23 @@ function compile(code: string, env: ImportMetaEnv) {
   return res;
 }
 
-const CWD = cwd();
-
-function parseEnvFile(filePath: string): Record<string, string> {
-  const content = readFileSync(filePath, 'utf8');
+export function parse(content: string) {
   const lines = content.split('\n');
-  const res: Record<string, string> = {}
+  const env: Record<string, string> = {}
   for (const line of lines) {
     try {
-      if (line.length > 0) {
-        const [key, value] = parseKeyValuePair(line);
-        res[key] = value;
+      if (line.length > 0 && !line.startsWith('#')) {
+        const pair = parseKeyValuePair(line);
+        if (pair) {
+          const [key, value] = pair;
+          if (key.startsWith('VITE_')) env[key] = value;
+        }
       }
     } catch (error) {
-      throw new Error(`Couldn't parse content in env file (${filePath}): ${line}`);
+      throw new Error(`Couldn't parse line: ${line}`);
     }
   }
-  return res;
+  return env;
 }
 
 export function register() {
@@ -50,21 +51,27 @@ export function register() {
     SSR: false,
     BASE_URL: '/'
   };
-  if (existsSync(defaultPath)) {
-    ENV_VARS = { ...ENV_VARS, ...parseEnvFile(defaultPath) };
+  function tryReadFrom(filePath: string): Record<string, string> {
+    const content = readFileSync(filePath, 'utf8');
+    try {
+      return parse(content);
+    }
+    catch(error: any) {
+      throw new Error(`Couldn't parse env file, encountered following error:\n${error.message}`);
+    }
   }
-  if (existsSync(defaultLocalPath)) {
-    ENV_VARS = { ...ENV_VARS, ...parseEnvFile(defaultLocalPath) };
+  function tryGatherFrom(path: string) {
+    if (existsSync(path)) {
+      ENV_VARS = { ...ENV_VARS, ...tryReadFrom(path) };
+    }
   }
+  tryGatherFrom(defaultPath);
+  tryGatherFrom(defaultLocalPath);
   if (NODE_ENV !== 'development') {
     const specificModePath = join(CWD, `./.env.${NODE_ENV}`);
     const specificModeLocalPath = join(CWD, `./.env.${NODE_ENV}`);
-    if (existsSync(specificModePath)) {
-      ENV_VARS = { ...ENV_VARS, ...parseEnvFile(specificModePath) };
-    }
-    else if (existsSync(specificModeLocalPath)) {
-      ENV_VARS = { ...ENV_VARS, ...parseEnvFile(specificModeLocalPath) };
-    }
+    tryGatherFrom(specificModePath);
+    tryGatherFrom(specificModeLocalPath);
   }
   addHook((code: string) => compile(code, ENV_VARS), { exts: DEFAULT_EXTENSIONS });
 }

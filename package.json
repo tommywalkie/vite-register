@@ -1,16 +1,16 @@
 {
   "name": "vite-register",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Node require hook which allows to use Vite env variables. Useful for tests.",
-  "bin": "dist/bin.js",
-  "main": "dist/require.js",
+  "main": "dist/register.js",
   "engines": {
     "node": ">=12"
   },
   "scripts": {
-    "build": "esbuild src/index.ts src/bin.ts src/require.ts --platform=node --target=es2019 --format=cjs --outdir=dist/",
-    "test": "run-s build test:exec",
-    "test:exec": "uvu -r tsm -r dist/require.js tests/"
+    "build": "esbuild src/index.ts src/register.ts --platform=node --target=es2019 --format=cjs --outdir=dist/",
+    "test": "run-p test:uvu test:mocha",
+    "test:uvu": "uvu -r esbuild-runner/register -r src/register.ts tests/uvu",
+    "test:mocha": "mocha -r esbuild-runner/register -r src/register.ts tests/mocha/*"
   },
   "repository": {
     "type": "git",
@@ -21,7 +21,9 @@
     "env",
     "register",
     "import",
-    "meta"
+    "meta",
+    "uvu",
+    "mocha"
   ],
   "author": "Tom Bazarnik <tommywalkie@gmail.com>",
   "license": "MIT",
@@ -34,10 +36,12 @@
     "pirates": "^4.0.1"
   },
   "devDependencies": {
+    "@types/mocha": "^9.0.0",
     "@types/node": "^16.11.6",
     "esbuild": "^0.13.10",
+    "esbuild-runner": "^2.2.1",
+    "mocha": "^9.1.3",
     "npm-run-all": "^4.1.5",
-    "tsm": "^2.1.3",
     "uvu": "^0.5.2",
     "vite": "^2.6.13"
   }
