@@ -44,10 +44,11 @@ export function register() {
   const NODE_ENV = process.env.NODE_ENV ?? 'development';
   const defaultPath = join(CWD, './.env');
   const defaultLocalPath = join(CWD, './.env.local');
+  const PROD = NODE_ENV === 'prod' || NODE_ENV === 'production';
   let ENV_VARS: ImportMetaEnv = {
     MODE: NODE_ENV,
-    DEV: NODE_ENV === 'development' || NODE_ENV === 'dev',
-    PROD: NODE_ENV === 'prod' || NODE_ENV === 'production',
+    DEV: !PROD,
+    PROD,
     SSR: false,
     BASE_URL: '/'
   };
