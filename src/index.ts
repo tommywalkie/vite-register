@@ -31,7 +31,7 @@ export function parse(content: string) {
         const pair = parseKeyValuePair(line);
         if (pair) {
           const [key, value] = pair;
-          if (key.startsWith('VITE_')) env[key] = value;
+          if (key.startsWith('VITE_') || key === 'NODE_ENV') env[key] = value;
         }
       }
     } catch (error) {
@@ -47,7 +47,7 @@ type ResolvedConfig = UserConfig & {
   env: Record<string, any>
 }
 
-export function register() {
+export function resolveConfig() {
   const NODE_ENV = process.env.NODE_ENV ?? 'development';
   const PROD = NODE_ENV === 'prod' || NODE_ENV === 'production';
   let config: ResolvedConfig = {
@@ -59,35 +59,40 @@ export function register() {
       BASE_URL: '/'
     }
   };
-  function tryReadViteConfig(path: string) {
+  function readViteConfigFrom(path: string) {
     if (existsSync(path)) {
       const resolvedConfig: ResolvedConfig = require(path).default;
       config = { ...config, ...resolvedConfig };
       if (resolvedConfig.base) config.env.BASE_URL = resolvedConfig.base;
+      if (resolvedConfig.mode) config.env.MODE = resolvedConfig.mode;
     }
   }
-  function tryReadFrom(filePath: string): Record<string, string> {
-    const content = readFileSync(filePath, 'utf8');
-    try {
-      return parse(content);
-    }
-    catch(error: any) {
-      throw new Error(`Couldn't parse env file, encountered following error:\n${error.message}`);
-    }
-  }
-  function tryGatherFrom(path: string) {
+  function readEnvFrom(path: string) {
     if (existsSync(path)) {
-      config.env = { ...config.env, ...tryReadFrom(path) };
+      const content = readFileSync(path, 'utf8');
+      try {
+        const pairs = parse(content);
+        config.env = { ...config.env, ...pairs };
+        if (pairs.NODE_ENV) config.env.MODE = pairs.NODE_ENV;
+      }
+      catch(error: any) {
+        throw new Error(`Couldn't parse env file, encountered following error:\n${error.message}`);
+      }
     }
   }
-  tryReadViteConfig(join(CWD, './vite.config.js'));
-  tryReadViteConfig(join(CWD, './vite.config.ts'));
-  tryReadViteConfig(join(CWD, './vite.config.mjs'));
-  tryGatherFrom(join(CWD, './.env'));
-  tryGatherFrom(join(CWD, './.env.local'));
+  readViteConfigFrom(join(CWD, './vite.config.js'));
+  readViteConfigFrom(join(CWD, './vite.config.ts'));
+  readViteConfigFrom(join(CWD, './vite.config.mjs'));
+  readEnvFrom(join(CWD, './.env'));
+  readEnvFrom(join(CWD, './.env.local'));
   if (NODE_ENV !== 'development') {
-    tryGatherFrom(join(CWD, `./.env.${NODE_ENV}`));
-    tryGatherFrom(join(CWD, `./.env.${NODE_ENV}`));
+    readEnvFrom(join(CWD, `./.env.${NODE_ENV}`));
+    readEnvFrom(join(CWD, `./.env.${NODE_ENV}.local`));
   }
+  return config;
+}
+
+export function register() {
+  const config = resolveConfig();
   return addHook((code: string) => compile(code, config.env), { exts: DEFAULT_EXTENSIONS });
 }

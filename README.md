@@ -18,10 +18,10 @@
     <img src="https://packagephobia.now.sh/badge?p=vite-register" alt="install size" />
   </a>
 </div>
-
 <div align="center">
-  <p>Require hook allowing to use Vite <a href="https://vitejs.dev/guide/env-and-mode.html">env variables</a> inside Node scripts and tests runners.</p>
+  <p>Use Vite <a href="https://vitejs.dev/guide/env-and-mode.html">env variables</a>  inside Node scripts and tests runners via a require hook.</p>
 </div>
+
 <br/>
 
 ## Install
@@ -34,12 +34,12 @@ npm install --save-dev vite-register
 
 Pretty much [like Vite does](https://vitejs.dev/guide/env-and-mode.html#production-replacement), vite-register will statically replace variables.
 
-- [x] Support `import.meta.env.MODE` (based on `process.env.NODE_ENV`, defaults to `development`)
+- [x] Support `import.meta.env.MODE`
 - [x] Support `import.meta.env.DEV`
 - [x] Support `import.meta.env.PROD`
 - [ ] Support experimental `import.meta.env.SSR` (defaults to `false`)
-- [x] Support `import.meta.env.BASE_URL` (defaults to `/`)
-- [x] Support loading variables prefixed with `VITE_`
+- [x] Support `import.meta.env.BASE_URL`
+- [x] Support loading variables (prefixed with `VITE_`)
   - [x] from a `.env` file
   - [x] from a `.env.local` file
   - [x] from a `.env.[mode]` file
@@ -47,7 +47,7 @@ Pretty much [like Vite does](https://vitejs.dev/guide/env-and-mode.html#producti
 
 ## Usage
 
-This hook can be used with the Node CLI and in some test runners supporting hooks via the `-r` (`--require`) option.
+This hook can be used with the Node CLI and some test runners supporting hooks via the `-r` (`--require`) option.
 
 ```bash
 echo 'VITE_FOO="hello world"' > .env
@@ -56,9 +56,9 @@ node -r vite-register index.js
 > hello world
 ```
 
-vite-register can look into Vite configuration files (`vite.config.[ext]`) and retrieve [`base`](https://vitejs.dev/config/#base).
+vite-register can look into Vite configuration files (`vite.config.[ext]`) and retrieve [`base`](https://vitejs.dev/config/#base) and [`mode`](https://vitejs.dev/config/#mode).
 
-Add some hook like [tsm](https://github.com/lukeed/tsm) or [esbuild-runner](https://github.com/folke/esbuild-runner) before using vite-register, when needing to support TypeScript/ESM support in scripts and configuration files.
+In most cases, TypeScript/ESM support in configuration files and scripts can be provided by third-party hooks like [tsm](https://github.com/lukeed/tsm) or [esbuild-runner](https://github.com/folke/esbuild-runner), before vite-register.
 
 ```bash
 node -r esbuild-runner/register -r vite-register index.ts
@@ -83,6 +83,10 @@ Can be combined with [tsm](https://github.com/lukeed/tsm) or [esbuild-runner](ht
 ```bash
 uvu -r tsm -r vite-register [pattern]
 ```
+
+## FAQ
+
+- **Support Jest?** Jest currently implements its own `require` (no hooks support) based on `vm`, see [facebook/jest#11295](https://github.com/facebook/jest/issues/11295).
 
 ## License
 

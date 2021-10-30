@@ -1,7 +1,7 @@
 {
   "name": "vite-register",
-  "version": "0.0.5",
-  "description": "Require hook allowing to use Vite env variables inside Node scripts and tests runners.",
+  "version": "0.0.6",
+  "description": "Use Vite env variables inside Node scripts and tests runners via a require hook.",
   "main": "dist/register.js",
   "engines": {
     "node": ">=12"
