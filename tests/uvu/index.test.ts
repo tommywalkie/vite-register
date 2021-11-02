@@ -24,20 +24,24 @@ $('Can parse content', () => {
 });
 
 $('Can compile content', () => {
-  // Escape static replacement during this specific test. 
-  const importMetaStr = 'import' + '.meta' + '.env';
-  const code = compile(`${importMetaStr}.MODE;\n${importMetaStr}.VITE_FOO;\n"import\u200b.meta.env.DEV"`, {
+  // Escape static replacement during this specific test.
+  const $1 = 'import';
+  const $2 = 'meta';
+  const $3 = 'env';
+  const importMetaStr = `${$1}.${$2}.${$3}`;
+  const env = {
     MODE: 'development',
     SSR: false,
     DEV: true,
     PROD: false,
     BASE_URL: '/',
     VITE_FOO: 'bar'
-  });
-  assert.is(code, '"development";\n"bar";\n"import\u200b.meta.env.DEV"');
+  }
+  const code = compile(`${importMetaStr}.MODE;\n${importMetaStr}.VITE_FOO;\n"import\u200b.meta.env.DEV";\n${importMetaStr}.FOO;`, env);
+  assert.is(code, '"development";\n"bar";\n"import\u200b.meta.env.DEV";\n(' + JSON.stringify(env) + ').FOO;');
 });
 
-$('Can hook into Uvu', () => {
+$('Can hook into uvu', () => {
   // Tests use vite-register hook, it is expected to get access to `import.meta.env`.
   assert.ok(import.meta.env.DEV);
 });

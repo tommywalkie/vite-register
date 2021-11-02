@@ -1,6 +1,6 @@
 {
   "name": "vite-register",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Use Vite env variables inside Node scripts and tests runners via a require hook.",
   "main": "dist/register.js",
   "engines": {
@@ -9,7 +9,7 @@
   "scripts": {
     "build": "esbuild src/index.ts src/register.ts --platform=node --target=es2019 --format=cjs --outdir=dist/",
     "test": "run-p test:uvu test:mocha",
-    "test:uvu": "uvu -r esbuild-runner/register -r src/register.ts tests/uvu",
+    "test:uvu": "uvu -r tsm -r src/register.ts tests/uvu",
     "test:mocha": "mocha -r esbuild-runner/register -r src/register.ts tests/mocha/*"
   },
   "repository": {
@@ -42,6 +42,7 @@
     "esbuild-runner": "^2.2.1",
     "mocha": "^9.1.3",
     "npm-run-all": "^4.1.5",
+    "tsm": "^2.1.4",
     "uvu": "^0.5.2",
     "vite": "^2.6.13"
   }

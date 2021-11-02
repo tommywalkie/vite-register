@@ -16,9 +16,20 @@ export function format(value: ImportMetaEnv[keyof ImportMetaEnv]) {
 
 export function compile(code: string, env: Record<string, any>) {
   let res = code;
+  const $1 = 'import';
+  const $2 = 'meta';
+  const $3 = 'env';
+  // This is intentional, in order to make sure the hook doesn't rewrite itself
+  const importMetaStr = `${$1}.${$2}.${$3}`;
   for (const [key, value] of Object.entries(env)) {
-    res = res.replace(new RegExp('import\.meta\.env\.' + key, 'g'), format(value));
+    res = res.split(`${importMetaStr}.${key}`).join(format(value));
   }
+  // Esbuild may parse 'import.meta' into a newly created 'import_meta' var
+  // https://github.com/evanw/esbuild/blob/a133f7dd2670e396ca3ef884ac3436e3de817876/internal/js_parser/js_parser.go#L14382
+  res = res.split(`${$1}_${$2} = {}`).join(`${$1}_${$2} = { env: ${JSON.stringify(env)} }`);
+  res = res.split(`${$1}_${$2}={}`).join(`${$1}_${$2}={env:${JSON.stringify(env)}}`);
+  // Fallback to the env record for any remaining occurance
+  res = res.split(`${importMetaStr}.`).join('(' + JSON.stringify(env) + ').');
   return res;
 }
 
@@ -41,7 +52,7 @@ export function parse(content: string) {
   return env;
 }
 
-type ResolvedConfig = UserConfig & {
+type Config = UserConfig & {
   mode?: string
   base?: string
   env: Record<string, any>
@@ -50,7 +61,7 @@ type ResolvedConfig = UserConfig & {
 export function resolveConfig() {
   const NODE_ENV = process.env.NODE_ENV ?? 'development';
   const PROD = NODE_ENV === 'prod' || NODE_ENV === 'production';
-  let config: ResolvedConfig = {
+  let config: Config = {
     env: {
       MODE: NODE_ENV,
       DEV: !PROD,
@@ -61,7 +72,7 @@ export function resolveConfig() {
   };
   function readViteConfigFrom(path: string) {
     if (existsSync(path)) {
-      const resolvedConfig: ResolvedConfig = require(path).default;
+      const resolvedConfig: Config = require(path).default;
       config = { ...config, ...resolvedConfig };
       if (resolvedConfig.base) config.env.BASE_URL = resolvedConfig.base;
       if (resolvedConfig.mode) config.env.MODE = resolvedConfig.mode;
