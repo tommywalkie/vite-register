@@ -1,7 +1,7 @@
 import { addHook } from 'pirates';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { cwd } from 'process';
+import { cwd, exit } from 'process';
 import type { UserConfig } from 'vite';
 import parseKeyValuePair from 'parse-key-value-pair';
 
@@ -14,8 +14,8 @@ export function format(value: ImportMetaEnv[keyof ImportMetaEnv]) {
   return value ? `"${value}"` : `""`;
 }
 
-export function compile(code: string, env: Record<string, any>) {
-  let res = code;
+export function compile(content: string, env: Record<string, any>) {
+  let res = content;
   const $1 = 'import';
   const $2 = 'meta';
   const $3 = 'env';
@@ -24,12 +24,13 @@ export function compile(code: string, env: Record<string, any>) {
   for (const [key, value] of Object.entries(env)) {
     res = res.split(`${importMetaStr}.${key}`).join(format(value));
   }
+  const envStr = JSON.stringify(env);
   // Esbuild may parse 'import.meta' into a newly created 'import_meta' var
   // https://github.com/evanw/esbuild/blob/a133f7dd2670e396ca3ef884ac3436e3de817876/internal/js_parser/js_parser.go#L14382
-  res = res.split(`${$1}_${$2} = {}`).join(`${$1}_${$2} = { env: ${JSON.stringify(env)} }`);
-  res = res.split(`${$1}_${$2}={}`).join(`${$1}_${$2}={env:${JSON.stringify(env)}}`);
-  // Fallback to the env record for any remaining occurance
-  res = res.split(`${importMetaStr}.`).join('(' + JSON.stringify(env) + ').');
+  res = res.split(`${$1}_${$2} = {}`).join(`${$1}_${$2} = { env: ${envStr} }`);
+  res = res.split(`${$1}_${$2}={}`).join(`${$1}_${$2}={env:${envStr}}`);
+  // In case there are still 'import.meta' refs, or if original content was already in CommonJS.
+  res = res.split(`${importMetaStr}.`).join(`(${envStr}).`);
   return res;
 }
 
@@ -70,15 +71,27 @@ export function resolveConfig() {
       BASE_URL: '/'
     }
   };
-  function readViteConfigFrom(path: string) {
+  function tryReadViteConfigFrom(path: string) {
     if (existsSync(path)) {
-      const resolvedConfig: Config = require(path).default;
-      config = { ...config, ...resolvedConfig };
-      if (resolvedConfig.base) config.env.BASE_URL = resolvedConfig.base;
-      if (resolvedConfig.mode) config.env.MODE = resolvedConfig.mode;
+      try {
+        const resolvedConfig: Config = require(path).default;
+        config = { ...config, ...resolvedConfig };
+        if (resolvedConfig.base) config.env.BASE_URL = resolvedConfig.base;
+        if (resolvedConfig.mode) config.env.MODE = resolvedConfig.mode;
+      }
+      catch(err: any) {
+        const error = err as Error;
+        const isModuleError = error.message.startsWith('Cannot use import statement outside a module');
+        const explanation = isModuleError
+          ? `some import/export statements were found in the said file, this means you'll need to use a third-party transpiler hook like 'tsm' or 'esbuild-runner' in order to support TypeScript/ESM syntax.`
+          : `throwing the following error:\n${error.stack}`;
+        const message = `Error: vite-register found Vite configuration file (${path}) but was unable to handle it, ${explanation}`;
+        console.error(message);
+        exit(1);
+      }
     }
   }
-  function readEnvFrom(path: string) {
+  function tryReadEnvFrom(path: string) {
     if (existsSync(path)) {
       const content = readFileSync(path, 'utf8');
       try {
@@ -91,14 +104,14 @@ export function resolveConfig() {
       }
     }
   }
-  readViteConfigFrom(join(CWD, './vite.config.js'));
-  readViteConfigFrom(join(CWD, './vite.config.ts'));
-  readViteConfigFrom(join(CWD, './vite.config.mjs'));
-  readEnvFrom(join(CWD, './.env'));
-  readEnvFrom(join(CWD, './.env.local'));
+  tryReadViteConfigFrom(join(CWD, './vite.config.js'));
+  tryReadViteConfigFrom(join(CWD, './vite.config.ts'));
+  tryReadViteConfigFrom(join(CWD, './vite.config.mjs'));
+  tryReadEnvFrom(join(CWD, './.env'));
+  tryReadEnvFrom(join(CWD, './.env.local'));
   if (NODE_ENV !== 'development') {
-    readEnvFrom(join(CWD, `./.env.${NODE_ENV}`));
-    readEnvFrom(join(CWD, `./.env.${NODE_ENV}.local`));
+    tryReadEnvFrom(join(CWD, `./.env.${NODE_ENV}`));
+    tryReadEnvFrom(join(CWD, `./.env.${NODE_ENV}.local`));
   }
   return config;
 }

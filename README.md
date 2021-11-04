@@ -19,7 +19,7 @@
   </a>
 </div>
 <div align="center">
-  <p>Use Vite <a href="https://vitejs.dev/guide/env-and-mode.html">env variables</a>  inside Node scripts and tests runners via a require hook.</p>
+  <p>Use Vite <a href="https://vitejs.dev/guide/env-and-mode.html">env variables</a>  inside Node scripts and test runners via a require hook.</p>
 </div>
 
 <br/>
@@ -58,7 +58,7 @@ node -r vite-register index.js
 
 vite-register can look into Vite configuration files (`vite.config.[ext]`) and retrieve [`base`](https://vitejs.dev/config/#base) and [`mode`](https://vitejs.dev/config/#mode).
 
-In most cases, TypeScript/ESM support in configuration files and scripts can be provided by third-party hooks like [tsm](https://github.com/lukeed/tsm) or [esbuild-runner](https://github.com/folke/esbuild-runner), before vite-register.
+In most cases, TypeScript/JSX/ESM support in configuration files and scripts can be provided by third-party hooks like [tsm](https://github.com/lukeed/tsm), [esbuild-runner](https://github.com/folke/esbuild-runner) or [esbuild-register](https://github.com/egoist/esbuild-register), before vite-register hook.
 
 ```bash
 node -r esbuild-runner/register -r vite-register index.ts
@@ -68,7 +68,7 @@ node -r esbuild-runner/register -r vite-register index.ts
 
 ↪️ <a href="https://github.com/mochajs/mocha">mochajs/mocha</a>
 
-Can be combined with [esbuild-runner](https://github.com/folke/esbuild-runner) for TypeScript/ESM support.
+Can be combined with [esbuild-runner](https://github.com/folke/esbuild-runner) for TypeScript/JSX/ESM support.
 
 ```bash
 mocha -r esbuild-runner/register -r vite-register [pattern]
@@ -78,7 +78,7 @@ mocha -r esbuild-runner/register -r vite-register [pattern]
 
 ↪️ <a href="https://github.com/lukeed/uvu">lukeed/uvu</a>
 
-Can be combined with [tsm](https://github.com/lukeed/tsm) or [esbuild-runner](https://github.com/folke/esbuild-runner) for TypeScript/ESM support.
+Can be combined with [tsm](https://github.com/lukeed/tsm) or [esbuild-runner](https://github.com/folke/esbuild-runner) for TypeScript/JSX/ESM support.
 
 ```bash
 uvu -r tsm -r vite-register [pattern]
