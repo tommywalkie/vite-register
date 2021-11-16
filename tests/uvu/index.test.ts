@@ -1,3 +1,4 @@
+import { cwd } from 'process';
 import { suite } from 'uvu';
 import * as assert from 'uvu/assert';
 import { compile, parse, format } from '../../src';
@@ -29,16 +30,20 @@ $('Can compile content', () => {
   const $2 = 'meta';
   const $3 = 'env';
   const importMetaStr = `${$1}.${$2}.${$3}`;
-  const env = {
-    MODE: 'development',
-    SSR: false,
-    DEV: true,
-    PROD: false,
-    BASE_URL: '/',
-    VITE_FOO: 'bar'
+  const config = {
+    envDir: cwd(),
+    envPrefix: ['VITE_'],
+    env: {
+      MODE: 'development',
+      SSR: false,
+      DEV: true,
+      PROD: false,
+      BASE_URL: '/',
+      VITE_FOO: 'bar'
+    }
   }
-  const code = compile(`${importMetaStr}.MODE;\n${importMetaStr}.VITE_FOO;\n"import\u200b.meta.env.DEV";\n${importMetaStr}.FOO;`, env);
-  assert.is(code, '"development";\n"bar";\n"import\u200b.meta.env.DEV";\n(' + JSON.stringify(env) + ').FOO;');
+  const code = compile(`${importMetaStr}.MODE;\n${importMetaStr}.VITE_FOO;\n"import\u200b.meta.env.DEV";\n${importMetaStr}.FOO;`, config);
+  assert.is(code, '"development";\n"bar";\n"import\u200b.meta.env.DEV";\n(' + JSON.stringify(config.env) + ').FOO;');
 });
 
 $('Can hook into uvu', () => {

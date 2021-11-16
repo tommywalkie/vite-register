@@ -37,19 +37,22 @@ Pretty much [like Vite does](https://vitejs.dev/guide/env-and-mode.html#producti
 - [x] Support `import.meta.env.MODE`
 - [x] Support `import.meta.env.DEV`
 - [x] Support `import.meta.env.PROD`
-- [ ] Support experimental `import.meta.env.SSR` (defaults to `false`)
+- [ ] Support `import.meta.env.SSR` (defaults to `false`)
 - [x] Support `import.meta.env.BASE_URL`
-- [x] Support loading variables (prefixed with `VITE_`)
+- [x] Support loading variables
   - [x] from a `.env` file
   - [x] from a `.env.local` file
   - [x] from a `.env.[mode]` file
   - [x] from a `.env.[mode].local` file
+- [x] Support `<UserConfig>.envPrefix` (defaults to `VITE_`)
+- [x] Support `<UserConfig>.envDir` (defaults to project root)
 
 ## Usage
 
 This hook can be used with the Node CLI and some test runners supporting hooks via the `-r` (`--require`) option.
 
 ```bash
+# Assuming envPrefix => 'VITE_'
 echo 'VITE_FOO="hello world"' > .env
 echo 'console.log(import.meta.env.VITE_FOO);' > index.js
 node -r vite-register index.js

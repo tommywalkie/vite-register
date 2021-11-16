@@ -1,4 +1,5 @@
 import * as assert from 'assert';
+import { cwd } from 'process';
 import { compile, parse, format } from '../../src';
 
 describe('vite-register (under Mocha)', function() {
@@ -19,22 +20,34 @@ describe('vite-register (under Mocha)', function() {
     assert.ok(env.VITE_FOO3);
     assert.equal(env.VITE_FOO3, 'true');
   });
+  it('should parse content with custom prefixes', function() {
+    const env = parse('FOO="bar"\nVITE_FOO="bar"\nCUSTOM_FOO=true', ['VITE_', 'CUSTOM_']);
+    assert.ok(!env.FOO);
+    assert.ok(env.VITE_FOO);
+    assert.equal(env.VITE_FOO, 'bar');
+    assert.ok(env.CUSTOM_FOO);
+    assert.equal(env.CUSTOM_FOO, 'true');
+  });
   it('should compile values', function() {
     // Escape static replacement during this specific test.
     const $1 = 'import';
     const $2 = 'meta';
     const $3 = 'env';
     const importMetaStr = `${$1}.${$2}.${$3}`;
-    const env = {
-      MODE: 'development',
-      SSR: false,
-      DEV: true,
-      PROD: false,
-      BASE_URL: '/',
-      VITE_FOO: 'bar'
+    const config = {
+      envDir: cwd(),
+      envPrefix: ['VITE_'],
+      env: {
+        MODE: 'development',
+        SSR: false,
+        DEV: true,
+        PROD: false,
+        BASE_URL: '/',
+        VITE_FOO: 'bar'
+      }
     }
-    const code = compile(`${importMetaStr}.MODE;\n${importMetaStr}.VITE_FOO;\n"import\u200b.meta.env.DEV";\n${importMetaStr}.FOO;`, env);
-    assert.equal(code, '"development";\n"bar";\n"import\u200b.meta.env.DEV";\n(' + JSON.stringify(env) + ').FOO;');
+    const code = compile(`${importMetaStr}.MODE;\n${importMetaStr}.VITE_FOO;\n"import\u200b.meta.env.DEV";\n${importMetaStr}.FOO;`, config);
+    assert.equal(code, '"development";\n"bar";\n"import\u200b.meta.env.DEV";\n(' + JSON.stringify(config.env) + ').FOO;');
   });
   it('should hook into Mocha', function() {
     // Tests use vite-register hook, it is expected to get access to `import.meta.env`.
