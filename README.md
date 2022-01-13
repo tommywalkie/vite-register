@@ -89,7 +89,7 @@ uvu -r tsm -r vite-register [pattern]
 
 ## FAQ
 
-### When should I use vite-register over Vitest, or vice-versa ?
+### When should I use vite-register over [Vitest](https://github.com/vitest-dev/vitest), or vice-versa ?
 
 - If you want a test framework, **use Vitest**.
 - If you need Jest features (snapshot, mocking, etc.), **use Vitest**.
@@ -98,9 +98,9 @@ uvu -r tsm -r vite-register [pattern]
 - If migrating tests becomes an issue, **use vite-register**.
 - If you _really_ can't upgrade to Node >=v14, **use vite-register**.
 
-### Will it support Jest ?
+### Support Jest ?
 
-Jest currently implements its own `require` (no hooks support), see [facebook/jest#11295](https://github.com/facebook/jest/issues/11295). 
+Jest currently doesn't support hooks ([facebook/jest#11295](https://github.com/facebook/jest/issues/11295)). If you need Jest unique features, you're better off switching to [Vitest](https://github.com/vitest-dev/vitest).
 
 ## License
 
